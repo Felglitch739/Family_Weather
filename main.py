@@ -21,10 +21,12 @@ WEATHER_API_KEY = os.getenv('WEATHER_API_KEY')
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
-USUARIOS_AUTORIZADOS = [ID_FELIX, ID_MAMA, ID_PAPA]
 ID_FELIX = '5207047409'  # Mi ID
 ID_MAMA = '8641690719'   # ID de mi mamá
 ID_PAPA = '0000000000'   # ID de mi papá (puedes cambiarlo por el real o dejarlo así para que no reciba nada)
+
+USUARIOS_AUTORIZADOS = [ID_FELIX, ID_MAMA, ID_PAPA]
+
 
 # --- FUNCIONES DEL CLIMA ---
 def obtener_clima():
