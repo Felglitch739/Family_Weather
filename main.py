@@ -8,6 +8,7 @@ import os
 import requests
 import telebot
 from telebot import apihelper
+apihelper.RETRY_ON_ERROR = True
 import schedule
 import time
 import threading
@@ -145,6 +146,11 @@ if __name__ == "__main__":
     hilo_reloj.start()
     print("⏰ Reloj interno activado.")
     
-    # Aqui nomas se prende al bot para que escuche mensajes
-    print("👂 Bot escuchando mensajes...")
-    bot.infinity_polling()
+    while True:
+        try:
+            print("👂 Bot escuchando mensajes...")
+            # Bajamos el tiempo de espera a 10s para que el servidor no se harte y nos corte
+            bot.infinity_polling(timeout=10, long_polling_timeout=5)
+        except Exception as e:
+            print(f"⚠️ El servidor cortó la conexión. Reconectando en 3 segundos... Error: {e}")
+            time.sleep(3)
