@@ -12,6 +12,7 @@ import time
 import threading
 from dotenv import load_dotenv
 from datetime import datetime
+import pytz
 
 # 1. Cargar las llaves secretas
 load_dotenv()
@@ -20,68 +21,86 @@ WEATHER_API_KEY = os.getenv('WEATHER_API_KEY')
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
-# Aquí pondremos tu ID y los de tus papás cuando te los pasen
-USUARIOS_AUTORIZADOS = ['5207047409'] # Tu ID ya está aquí configurado
+USUARIOS_AUTORIZADOS = [ID_FELIX, ID_MAMA, ID_PAPA]
+ID_FELIX = '5207047409'  # Mi ID
+ID_MAMA = '8641690719'   # ID de mi mamá
+ID_PAPA = '0000000000'   # ID de mi papá (puedes cambiarlo por el real o dejarlo así para que no reciba nada)
 
 # --- FUNCIONES DEL CLIMA ---
 def obtener_clima():
-    url = f"http://api.openweathermap.org/data/2.5/weather?q=Matamoros,MX&appid={WEATHER_API_KEY}&units=metric&lang=es"
-    respuesta = requests.get(url)
-    if respuesta.status_code == 200:
-        datos = respuesta.json()
-        
-        # Extraemos los datos del "paquete"
-        info = {
-            "temp": datos['main']['temp'],
-            "feels_like": datos['main']['feels_like'], 
-            "humedad": datos['main']['humidity'],      
-            "desc": datos['weather'][0]['description'].capitalize(),
-            "temp_max": datos['main']['temp_max'],
-            "temp_min": datos['main']['temp_min']
-        }
-        return info
+    url = f"http://api.openweathermap.org/data/2.5/weather?q=Matamoros,Tamaulipas,MX&appid={WEATHER_API_KEY}&units=metric&lang=es"
+    try:
+        respuesta = requests.get(url)
+        if respuesta.status_code == 200:
+            datos = respuesta.json()
+            
+            info = {
+                "temp": datos['main']['temp'],
+                "feels_like": datos['main']['feels_like'], 
+                "humedad": datos['main']['humidity'],      
+                "desc": datos['weather'][0]['description'].capitalize(),
+                "temp_max": datos['main']['temp_max'],
+                "temp_min": datos['main']['temp_min']
+            }
+            return info
+    except Exception as e:
+        print(f"❌ Error al obtener clima: {e}") 
     return None
 
 def mandar_clima_automatico():
-    print("⏳ Ejecutando envío automático...")
     clima = obtener_clima()
-    
-    if clima:
-        mensaje = (
-            f"🌡️ *REPORTE CLIMA MATAMOROS* 🌡️\n\n"
-            f"🌤️ *Estado:* {clima['desc']}\n"
-            f"🌡️ *Temperatura:* {clima['temp']}°C\n"
-            f"🥵 *Sensación:* {clima['feels_like']}°C\n"
-            f"💧 *Humedad:* {clima['humedad']}%\n"
-            f"📈 *Hoy estará entre:* {clima['temp_min']}° y {clima['temp_max']}°\n\n"
-            f"¡Tomen mucha agua y tengan un gran día! 🥤"
-        )
+    if not clima:
+        return
+
+    for chat_id in USUARIOS_AUTORIZADOS:
+        # --- MENSAJE PARA MAMÁ ---
+        if chat_id == ID_MAMA:
+            saludo = "🌸 *¡Buenos días, maaa!* 🌸\nEspero que tengas un día hermoso."
+            consejo = "No olvides llevar un suéter si refresca o tomar mucha agua. ✨"
         
-        for chat_id in USUARIOS_AUTORIZADOS:
-            try:
-                # parse_mode='Markdown' permite que las negritas y emojis se vean bien
-                bot.send_message(chat_id, mensaje, parse_mode='Markdown')
-                print(f"✅ Enviado a {chat_id}")
-            except Exception as e:
-                print(f"❌ Error: {e}")
+        # --- MENSAJE PARA PAPÁ ---
+        elif chat_id == ID_PAPA:
+            saludo = "🕶️ *¡Qué onda, pá!* 🕶️\nAquí te paso el dato del tiempo."
+            consejo = "¡Éxito en la chamba hoy! 🚀"
+            
+        # --- MENSAJE PARA TI (O DEFAULT) ---
+        else:
+            saludo = "⚡ *¡Hey, Espero tengas buen dia!* ⚡\nAquí te dejo el reporte del clima."
+            consejo = "¡A darle con todo hoy! 💪"
+
+        # Armamos el cuerpo del reporte (igual para todos)
+        cuerpo_reporte = (
+            f"\n\n🌤️ *Estado:* {clima['desc']}\n"
+            f"🌡️ *Temp:* {clima['temp']}°C\n"
+            f"🥵 *Sensación:* {clima['feels_like']}°C\n"
+            f"💧 *Humedad:* {clima['humedad']}%\n\n"
+            f"{consejo}"
+        )
+
+        mensaje_final = saludo + cuerpo_reporte
+
+        try:
+            # Si el ID es '0000000000', el bot no intentará mandar nada
+            if chat_id != '0000000000':
+                bot.send_message(chat_id, mensaje_final, parse_mode='Markdown')
+        except Exception as e:
+            print(f"No se pudo enviar a {chat_id}: {e}")
+
 
 def reloj_interno():
-    # Programamos que el intento sea cada hora en punto (ej: 1:00, 2:00, 3:00...)
-    # Para la prueba podrías dejarlo cada minuto si quieres ver que funcione
-    #schedule.every().hour.at(":00").do(validar_y_enviar)
-    schedule.every(10).seconds.do(validar_y_enviar)
+    schedule.every().hour.at(":00").do(validar_y_enviar)
+    #schedule.every(10).seconds.do(validar_y_enviar)
 
     while True:
         schedule.run_pending()
         time.sleep(1)
 
 def validar_y_enviar():
-    hora_actual = datetime.now().hour # Saca la hora en formato 24h (0 a 23)
-    
-    # Rango permitido: De las 7 AM hasta las 11 PM (23:00)
     # Esto bloquea el envío de 12:00 AM a 6:59 AM
+    zona_horaria = pytz.timezone('America/Matamoros')
+    hora_actual = datetime.datetime.now(zona_horaria).hour
+    
     if 7 <= hora_actual <= 23:
-        print(f"⏰ Son las {hora_actual}:00. Enviando reporte horario...")
         mandar_clima_automatico()
     else:
         print(f"😴 Son las {hora_actual}:00. Horario de descanso, no se envía nada.")
@@ -91,13 +110,25 @@ def validar_y_enviar():
 @bot.message_handler(commands=['start'])
 def bienvenida(message):
     chat_id = message.chat.id
-    bot.reply_to(message, f"¡Hola! Tu ID secreto es: {chat_id}\n\nPásale este número a Felix para que te agregue a la lista del clima.")
+    bot.reply_to(message, f"¡Hola! Tu ID secreto es: {chat_id}")
 
 @bot.message_handler(commands=['clima'])
 def mandar_clima_manual(message):
-    temp, desc = obtener_clima()
-    if temp:
-        bot.reply_to(message, f"🌡️ *Reporte a petición* 🌡️\nMatamoros: {temp}°C, {desc.capitalize()}")
+    clima = obtener_clima() # Ahora recibimos TODO el diccionario
+    
+    if clima:
+        # Usamos los datos del diccionario igual que en el mensaje automático
+        reporte = (
+            f"🌡️ *REPORTE SOLICITADO* 🌡️\n\n"
+            f"🌤️ *Estado:* {clima['desc']}\n"
+            f"🌡️ *Temperatura:* {clima['temp']}°C\n"
+            f"🥵 *Sensación:* {clima['feels_like']}°C\n"
+            f"💧 *Humedad:* {clima['humedad']}%\n\n"
+            f"📍 Matamoros, Tamaulipas"
+        )
+        bot.reply_to(message, reporte, parse_mode='Markdown')
+    else:
+        bot.reply_to(message, "Error al obtener el clima. Revisa la consola.")
 
 # --- ARRANQUE DEL SISTEMA ---
 if __name__ == "__main__":
