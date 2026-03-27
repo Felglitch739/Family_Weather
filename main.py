@@ -106,7 +106,7 @@ def validar_y_enviar():
     zona_horaria = pytz.timezone('America/Matamoros')
     hora_actual = datetime.datetime.now(zona_horaria).hour
     
-    if 7 <= hora_actual <= 23:
+    if 7 <= hora_actual <= 24:
         mandar_clima_automatico()
     else:
         print(f"😴 Son las {hora_actual}:00. Horario de descanso, no se envía nada.")
