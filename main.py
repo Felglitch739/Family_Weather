@@ -23,7 +23,7 @@ bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
 ID_FELIX = '5207047409'  # Mi ID
 ID_MAMA = '8641690719'   # ID de mi mamá
-ID_PAPA = '0000000000'   # ID de mi papá (puedes cambiarlo por el real o dejarlo así para que no reciba nada)
+ID_PAPA = '0000000000'   # ID de mi papá 
 
 USUARIOS_AUTORIZADOS = [ID_FELIX, ID_MAMA, ID_PAPA]
 
@@ -65,12 +65,12 @@ def mandar_clima_automatico():
             saludo = "🕶️ *¡Qué onda, pá!* 🕶️\nAquí te paso el dato del tiempo."
             consejo = "¡Éxito en la chamba hoy! 🚀"
             
-        # --- MENSAJE PARA TI (O DEFAULT) ---
+        # --- MENSAJE DEFAULT) ---
         else:
             saludo = "⚡ *¡Hey, Espero tengas buen dia!* ⚡\nAquí te dejo el reporte del clima."
             consejo = "¡A darle con todo hoy! 💪"
 
-        # Armamos el cuerpo del reporte (igual para todos)
+        # Se arma el cuerpo del mensaje (igual para todos)
         cuerpo_reporte = (
             f"\n\n🌤️ *Estado:* {clima['desc']}\n"
             f"🌡️ *Temp:* {clima['temp']}°C\n"
@@ -91,14 +91,14 @@ def mandar_clima_automatico():
 
 def reloj_interno():
     schedule.every().hour.at(":00").do(validar_y_enviar)
-    #schedule.every(10).seconds.do(validar_y_enviar)
+    #schedule.every(10).seconds.do(validar_y_enviar) Esto fue para testear si funcionaba, manda el mensaje cada 10 segundos
 
     while True:
         schedule.run_pending()
         time.sleep(1)
 
 def validar_y_enviar():
-    # Esto bloquea el envío de 12:00 AM a 6:59 AM
+    # Esto bloquea el envío de 12:00 AM a 6:59 AM (Esto es personal puedes modificarlos a las horas que quieras que funcione)
     zona_horaria = pytz.timezone('America/Matamoros')
     hora_actual = datetime.datetime.now(zona_horaria).hour
     
@@ -108,7 +108,7 @@ def validar_y_enviar():
         print(f"😴 Son las {hora_actual}:00. Horario de descanso, no se envía nada.")
         
 
-# --- EL CEREBRO DEL CHAT (HILO PRINCIPAL) ---
+# --- EL CEREBRO DEL CHAT  ---
 @bot.message_handler(commands=['start'])
 def bienvenida(message):
     chat_id = message.chat.id
@@ -119,7 +119,7 @@ def mandar_clima_manual(message):
     clima = obtener_clima() # Ahora recibimos TODO el diccionario
     
     if clima:
-        # Usamos los datos del diccionario igual que en el mensaje automático
+        # Aqui psss pasamos los datos al mensaje manual
         reporte = (
             f"🌡️ *REPORTE SOLICITADO* 🌡️\n\n"
             f"🌤️ *Estado:* {clima['desc']}\n"
@@ -136,11 +136,11 @@ def mandar_clima_manual(message):
 if __name__ == "__main__":
     print("🤖 Iniciando Family Weather...")
     
-    # 1. Prendemos el reloj en el "fondo"
+    # 1. Prendemos el reloj en el "fondo" para las personas de la lista que se les mandara el clima cada hora
     hilo_reloj = threading.Thread(target=reloj_interno, daemon=True)
     hilo_reloj.start()
     print("⏰ Reloj interno activado.")
     
-    # 2. Prendemos al bot para que escuche mensajes
+    # Aqui nomas se prende al bot para que escuche mensajes
     print("👂 Bot escuchando mensajes...")
     bot.infinity_polling()
