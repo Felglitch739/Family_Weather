@@ -16,7 +16,6 @@ from dotenv import load_dotenv
 from datetime import datetime
 import pytz
 
-apihelper.proxy = {'https': 'http://proxy.server:3128'}
 TOKEN = os.getenv('TELEGRAM_TOKEN')
 bot = telebot.TeleBot(TOKEN)
 # 1. Cargar las llaves secretas
